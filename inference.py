@@ -161,7 +161,7 @@ def main():
             left = F.pad(left, (0, right_pad, top_pad, 0))
             right = F.pad(right, (0, right_pad, top_pad, 0))
 
-        # Warpup
+        # Warmup
         if i == 0 and args.count_time:
             with torch.no_grad():
                 for _ in range(10):
