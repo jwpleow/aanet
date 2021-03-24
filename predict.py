@@ -164,7 +164,7 @@ def main():
         if pred_disp.size(-1) < left.size(-1):
             pred_disp = pred_disp.unsqueeze(1)  # [B, 1, H, W]
             pred_disp = F.interpolate(pred_disp, (left.size(-2), left.size(-1)),
-                                      mode='bilinear') * (left.size(-1) / pred_disp.size(-1))
+                                      mode='bilinear', align_corners=True, recompute_scale_factor=True) * (left.size(-1) / pred_disp.size(-1))
             pred_disp = pred_disp.squeeze(1)  # [B, H, W]
 
         # Crop
