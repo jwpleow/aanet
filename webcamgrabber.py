@@ -1,37 +1,59 @@
 import cv2
 import numpy as np
 import os
+import threading
 
 class Arducam():
     def __init__(self, calib_params="CalibParams_Stereo.yml"):
         self._import_params(calib_params)
         self._connect_to_camera()
         self._calculate_matched_roi()
-        
-    def read_frame(self):
 
-        ret = False
-        while ret == False:
-            ret, image = self._cam.read()
+        self.thread_running = True
+        self.frame_lock = threading.Lock()
+        self.last_frame = np.zeros((self.image_size_[1], self.image_size_[0] * 2))
+
+        self.thread = threading.Thread(target=self.update, args=())
+        self.thread.start()
+
+        
+    def update(self):
+        while self.thread_running:
+            ret, frame = self._cam.read()
+            if ret:
+                self.frame_lock.acquire()
+                self.last_frame = frame
+                self.frame_lock.release()
+    
+    def read(self):
+        self.frame_lock.acquire()
+        image = self.last_frame.copy()
+        self.frame_lock.release()
+
         # split
         left = image[0:self.image_size_[1], 0:self.image_size_[0]]
         right = image[0:self.image_size_[1],
-                      self.image_size_[0]:2*self.image_size_[0]]
+                    self.image_size_[0]:2*self.image_size_[0]]
         Uleft = cv2.remap(left, self.left_map_1_,
-                          self.left_map_2_, cv2.INTER_LINEAR)
+                        self.left_map_2_, cv2.INTER_LINEAR)
         Uright = cv2.remap(right, self.right_map_1_,
-                           self.right_map_2_, cv2.INTER_LINEAR)
+                        self.right_map_2_, cv2.INTER_LINEAR)
         Uleft = Uleft[self.matchedRoi1_[1]: self.matchedRoi1_[
             1] + self.matchedRoi1_[3], self.matchedRoi1_[0]:self.matchedRoi1_[0]+self.matchedRoi1_[2]]
         Uright = Uright[self.matchedRoi2_[1]: self.matchedRoi2_[
             1] + self.matchedRoi2_[3], self.matchedRoi2_[0]:self.matchedRoi2_[0]+self.matchedRoi2_[2]]
         return Uleft, Uright
 
+    def release(self):
+        self.thread_running = False
+        self.thread.join()
+
     def _connect_to_camera(self):
         # connect to cam
-        self._cam = cv2.VideoCapture(0, cv2.CAP_GSTREAMER)
+        # self._cam = cv2.VideoCapture('uridecodebin uri=rtsp://192.168.1.86:8554/test ! appsink', cv2.CAP_GSTREAMER)
+        self._cam = cv2.VideoCapture('rtsp://192.168.1.86:8554/test', cv2.CAP_GSTREAMER)
         if not (self._cam.isOpened()):
-            raise Error("Webcam could not be opened!")
+            raise Exception("Webcam could not be opened!")
         self._cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.image_size_[0] * 2)
         self._cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.image_size_[1])
         os.system("v4l2-ctl --set-ctrl=gain=5")
@@ -85,8 +107,9 @@ class Arducam():
 if __name__ == "__main__":
     cam = Arducam()
     while True:
-        left, right = cam.read_frame()
+        left, right = cam.read()
         cv2.imshow("left", left)
         cv2.imshow("right", right)
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            cam.release()
             break

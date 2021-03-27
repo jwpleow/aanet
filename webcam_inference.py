@@ -144,7 +144,7 @@ def main():
     print(f"Finished warmup, starting inference...")
     while True:
         print(f"Loop {num_imgs}")
-        left_img, right_img = cam.read_frame()
+        left_img, right_img = cam.read()
         print(f"left_img shape: {left_img.shape}")
         cv2.imshow("left", left_img)
         cv2.imshow("right", right_img)
@@ -210,6 +210,7 @@ def main():
         #             skimage.io.imsave(save_name, (disp * 256.).astype(np.uint16))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            cam.release()
             break
     disp = 255 * disp
     img = disp.astype(np.uint8)
