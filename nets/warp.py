@@ -7,7 +7,7 @@ def normalize_coords(grid):
     Args:
         grid: [B, 2, H, W]
     """
-    assert grid.size(1) == 2
+    # assert grid.size(1) == 2
     h, w = grid.size()[2:]
     grid[:, 0, :, :] = 2 * (grid[:, 0, :, :].clone() / (w - 1)) - 1  # x: [-1, 1]
     grid[:, 1, :, :] = 2 * (grid[:, 1, :, :].clone() / (h - 1)) - 1  # y: [-1, 1]
@@ -48,7 +48,7 @@ def disp_warp(img, disp, padding_mode='border'):
         warped_img: [B, 3, H, W]
         valid_mask: [B, 3, H, W]
     """
-    assert disp.min() >= 0
+    # assert disp.min() >= 0
 
     grid = meshgrid(img)  # [B, 2, H, W] in image scale
     # Note that -disp here

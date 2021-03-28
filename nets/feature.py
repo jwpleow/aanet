@@ -366,7 +366,7 @@ class Conv2x(nn.Module):
 
     def forward(self, x, rem):
         x = self.conv1(x)
-        assert (x.size() == rem.size())
+        # assert (x.size() == rem.size())
         if self.concat:
             x = torch.cat((x, rem), 1)
         else:

@@ -1,8 +1,5 @@
-from .deform_conv import (DeformConv, DeformConvPack, ModulatedDeformConv,
-                          ModulatedDeformConvPack, deform_conv,
-                          modulated_deform_conv)
+# Copyright (c) Facebook, Inc. and its affiliates.
+from .deform_conv import DeformConv, ModulatedDeformConv
 
-__all__ = [
-    'DeformConv', 'DeformConvPack', 'ModulatedDeformConv',
-    'ModulatedDeformConvPack', 'deform_conv', 'modulated_deform_conv',
-]
+
+__all__ = [k for k in globals().keys() if not k.startswith("_")]

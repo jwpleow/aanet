@@ -8,6 +8,7 @@ import numpy as np
 import time
 import os
 import cv2
+import math
 
 import nets
 import dataloader
@@ -25,12 +26,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default='test', type=str,
                     help='Validation mode on small subset or test mode on full test data')
 
-# Training data
-# parser.add_argument('--data_dir', default='data/SceneFlow',
-#                     type=str, help='Training dataset')
-# parser.add_argument('--dataset_name', default='SceneFlow', type=str, help='Dataset name')
-
-parser.add_argument('--batch_size', default=1, type=int, help='Batch size for inference')
 parser.add_argument('--num_workers', default=0, type=int, help='Number of workers for data loading')
 parser.add_argument('--img_height', default=576, type=int, help='Image height for inference')
 parser.add_argument('--img_width', default=960, type=int, help='Image width for inference')
@@ -81,6 +76,9 @@ utils.save_command(args.output_dir)
 def main():
 
     cam = webcamgrabber.Arducam()
+    left, right = cam.read()
+    img_height, img_width= left.shape[:2]
+
     # For reproducibility
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
@@ -119,11 +117,7 @@ def main():
         print('=> Loading pretrained AANet:', args.pretrained_aanet)
         utils.load_pretrained_net(aanet, args.pretrained_aanet, no_strict=True)
     else:
-        print('=> Net not found, using random initialization')
-
-    # Save parameters
-    num_params = utils.count_parameters(aanet)
-    print('=> Number of trainable parameters: %d' % num_params)
+        raise Exception(f'Model not found! {args.pretrained_aanet}')
 
     if torch.cuda.device_count() > 1:
         print('=> Use %d GPUs' % torch.cuda.device_count())
@@ -131,21 +125,12 @@ def main():
 
     # Inference
     aanet.eval()
-    # Warmup
-    print(f"Warming up...")
-    left = torch.zeros(1, 3, args.img_height, args.img_width).to(device)
-    right = torch.zeros(1, 3, args.img_height, args.img_width).to(device)
-    # with torch.no_grad():
-    #     for _ in range(2):
-    #         aanet(left, right)
-
     inference_time = 0
     num_imgs = 0
     print(f"Finished warmup, starting inference...")
     while True:
-        print(f"Loop {num_imgs}")
+        print(f"Frame {num_imgs}")
         left_img, right_img = cam.read()
-        print(f"left_img shape: {left_img.shape}")
         cv2.imshow("left", left_img)
         cv2.imshow("right", right_img)
         img = {'left': left_img, 'right': right_img}
@@ -156,9 +141,14 @@ def main():
         
         # Pad
         ori_height, ori_width = left.size()[2:]
-        if ori_height < args.img_height or ori_width < args.img_width:
-            top_pad = args.img_height - ori_height
-            right_pad = args.img_width - ori_width
+
+        factor = 48 if args.refinement_type != 'hourglass' else 96
+        img_height = math.ceil(ori_height / factor) * factor
+        img_width = math.ceil(ori_width / factor) * factor
+
+        if ori_height < img_height or ori_width < img_width:
+            top_pad = img_height - ori_height
+            right_pad = img_width - ori_width
 
             # Pad size: (left_pad, right_pad, top_pad, bottom_pad)
             left = F.pad(left, (0, right_pad, top_pad, 0))
@@ -169,6 +159,7 @@ def main():
         print("Performing inference...")
         with torch.no_grad():
             time_start = time.perf_counter()
+            # print(left.shape)
             pred_disp = aanet(left, right)[-1]  # [B, H, W]
             inference_time += time.perf_counter() - time_start
 
@@ -180,15 +171,15 @@ def main():
             pred_disp = pred_disp.cpu().squeeze(1)  # [B, H, W]
 
         # Crop
-        if ori_height < args.img_height or ori_width < args.img_width:
+        if ori_height < img_height or ori_width < img_width:
             if right_pad != 0:
                 pred_disp = pred_disp[:, top_pad:, :-right_pad]
             else:
                 pred_disp = pred_disp[:, top_pad:]
 
-        disp = pred_disp.cpu().numpy().squeeze(0)
+        disp = pred_disp[0].detach().cpu().numpy()
         disp = disp / np.max(disp)
-        print(f"disp - shape {disp.shape}, max {np.max(disp)}, min {np.min(disp)}")
+        # print(f"disp - shape {disp.shape}, max {np.max(disp)}, min {np.min(disp)}")
         cv2.imshow("Disparity", disp)
 
         # for b in range(pred_disp.size(0)):
