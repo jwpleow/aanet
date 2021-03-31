@@ -52,7 +52,7 @@ aanet = nets.AANet(args.max_disp,
                        refinement_type=args.refinement_type,
                        mdconv_dilation=args.mdconv_dilation,
                        deformable_groups=args.deformable_groups).to(device)
-    
+aanet.eval()
 if os.path.exists(args.pretrained_aanet):
     print('=> Loading pretrained AANet:', args.pretrained_aanet)
     utils.load_pretrained_net(aanet, args.pretrained_aanet, no_strict=True)
@@ -62,7 +62,7 @@ else:
 # net.to("cuda")
 
 
-left = torch.randn(1, 3, 384, 672).cuda()
+left = torch.randn(1, 3, 384, 672).cuda() # must be multiple of 48/96
 right = torch.randn(1, 3, 384, 672).cuda()
 inputs = (left, right)
 

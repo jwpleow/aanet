@@ -4,9 +4,9 @@ import os
 import threading
 
 class Arducam():
-    def __init__(self, calib_params="CalibParams_Stereo.yml"):
+    def __init__(self, camera_string, calib_params="CalibParams_Stereo.yml"):
         self._import_params(calib_params)
-        self._connect_to_camera()
+        self._connect_to_camera(camera_string)
         self._calculate_matched_roi()
 
         self.thread_running = True
@@ -48,10 +48,10 @@ class Arducam():
         self.thread_running = False
         self.thread.join()
 
-    def _connect_to_camera(self):
+    def _connect_to_camera(self, camera_string):
         # connect to cam
         # self._cam = cv2.VideoCapture('uridecodebin uri=rtsp://192.168.1.86:8554/test ! appsink', cv2.CAP_GSTREAMER)
-        self._cam = cv2.VideoCapture('rtsp://192.168.1.86:8554/test', cv2.CAP_GSTREAMER)
+        self._cam = cv2.VideoCapture(camera_string, cv2.CAP_GSTREAMER)
         if not (self._cam.isOpened()):
             raise Exception("Webcam could not be opened!")
         self._cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.image_size_[0] * 2)

@@ -1,0 +1,12 @@
+__pycache__/
+.vscode/
+**.so
+*.mp4
+*.mkv
+*.pt
+*.pth
+build/
+*.yml
+*.png
+*.egg-info
+build/

@@ -10,6 +10,7 @@ import os
 import cv2
 import math
 
+# from memory_profiler import profile
 import nets
 import dataloader
 from dataloader import transforms
@@ -72,10 +73,10 @@ args.output_dir = os.path.join(args.output_dir, model_dir + '-' + model_name)
 utils.check_path(args.output_dir)
 utils.save_command(args.output_dir)
 
-
+# @profile
 def main():
 
-    cam = webcamgrabber.Arducam()
+    cam = webcamgrabber.Arducam("rtsp://192.168.1.70:8554/test")
     left, right = cam.read()
     img_height, img_width= left.shape[:2]
 
@@ -131,6 +132,7 @@ def main():
     while True:
         print(f"Frame {num_imgs}")
         left_img, right_img = cam.read()
+        # print(left_img.shape)
         cv2.imshow("left", left_img)
         cv2.imshow("right", right_img)
         img = {'left': left_img, 'right': right_img}
@@ -160,7 +162,9 @@ def main():
         with torch.no_grad():
             time_start = time.perf_counter()
             # print(left.shape)
-            pred_disp = aanet(left, right)[-1]  # [B, H, W]
+            outputdisp = aanet(left, right)  # [B, H, W]
+            print(f"Size {outputdisp.shape}")
+            pred_disp = outputdisp[-1]
             inference_time += time.perf_counter() - time_start
 
         print("Interpolating disparity...")
