@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from nets.deform_conv import DeformConv, ModulatedDeformConv
+from nets.deform_conv import ModulatedDeformConv
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
@@ -42,18 +42,9 @@ class DeformConv2d(nn.Module):
                                                    padding=dilation,
                                                    dilation=dilation,
                                                    groups=groups,
-                                                   deformable_groups=deformable_groups,
-                                                   bias=bias)
+                                                   deformable_groups=deformable_groups)
         else:
-            self.deform_conv = DeformConv(in_channels,
-                                          out_channels,
-                                          kernel_size=kernel_size,
-                                          stride=stride,
-                                          padding=dilation,
-                                          dilation=dilation,
-                                          groups=groups,
-                                          deformable_groups=deformable_groups,
-                                          bias=bias)
+            raise Exception("No deformconvV1")
 
         k = 3 if self.modulation else 2
 

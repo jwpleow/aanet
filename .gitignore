@@ -10,3 +10,4 @@ build/
 *.png
 *.egg-info
 build/
+output/
