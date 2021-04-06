@@ -18,6 +18,7 @@ from utils import utils
 from utils.file_io import write_pfm
 
 import webcamgrabber
+import visualise
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
@@ -81,6 +82,7 @@ def main():
     left, right = cam.read()
     img_height, img_width= left.shape[:2]
 
+    vis = visualise.Visualiser(cam.Q_)
     # For reproducibility
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
@@ -128,10 +130,10 @@ def main():
     # Inference
     aanet.eval()
     inference_time = 0
-    num_imgs = 0
+    framecount = 0
     print(f"Finished warmup, starting inference...")
     while True:
-        print(f"Frame {num_imgs}")
+        print(f"Frame {framecount}")
         left_img, right_img = cam.read()
         # print(left_img.shape)
         cv2.imshow("left", left_img)
@@ -157,7 +159,7 @@ def main():
             left = F.pad(left, (0, right_pad, top_pad, 0))
             right = F.pad(right, (0, right_pad, top_pad, 0))
 
-        num_imgs += left.size(0)
+        framecount += left.size(0)
 
         # print("Performing inference...")
         with torch.no_grad():
@@ -180,9 +182,8 @@ def main():
                 pred_disp = pred_disp[:, top_pad:]
 
         disp = pred_disp[0].detach().cpu().numpy()
-        disp = disp / np.max(disp)
-        # print(f"disp - shape {disp.shape}, max {np.max(disp)}, min {np.min(disp)}")
-        cv2.imshow("Disparity", disp)
+
+        vis.update(disp, left_img)
 
         # for b in range(pred_disp.size(0)):
         #     disp = pred_disp[b].detach().cpu().numpy()  # [H, W]
@@ -204,13 +205,16 @@ def main():
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cam.release()
+            vis.release()
             break
+
+    # save image
     disp = 255 * disp
     img = disp.astype(np.uint8)
     cv2.imwrite("disparity.png", img)
     cv2.imwrite("left.png", left_img)
     cv2.imwrite("right.png", right_img)
-    print('=> Mean inference time for %d images: %.3fs' % (num_imgs, inference_time / num_imgs))
+    print('=> Mean inference time for %d images: %.3fs' % (framecount, inference_time / framecount))
 
 
 if __name__ == '__main__':

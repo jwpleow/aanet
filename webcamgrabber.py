@@ -51,11 +51,13 @@ class Arducam():
     def _connect_to_camera(self, camera_string):
         # connect to cam
         # self._cam = cv2.VideoCapture('uridecodebin uri=rtsp://192.168.1.86:8554/test ! appsink', cv2.CAP_GSTREAMER)
+        print("Attempting to open VideoCapture...")
         self._cam = cv2.VideoCapture(camera_string, cv2.CAP_GSTREAMER)
         if not (self._cam.isOpened()):
             raise Exception("Webcam could not be opened!")
-        self._cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.image_size_[0] * 2)
-        self._cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.image_size_[1])
+        # self._cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.image_size_[0] * 2)
+        # self._cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.image_size_[1])
+        print("VideoCapture opened!")
         os.system("v4l2-ctl --set-ctrl=gain=5")
 
 
