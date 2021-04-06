@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.0)
 project(aanet)
 
-# cmake commands
+## cmake commands
+## pytorch from conda has -D_GLIBCXX_USE_CXX11_ABI=0
 # cmake -DCMAKE_PREFIX_PATH="$(python -c 'import torch.utils; print(torch.utils.cmake_prefix_path)')" ..
+## if using -D_GLIBCXX_USE_CXX11_ABI=1 libtorch... use:
 # cmake -DCMAKE_PREFIX_PATH=/home/joel/Downloads/libtorch1.7 ..
+## build (can use make too)
 # cmake --build . --config Release
 
 

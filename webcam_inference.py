@@ -75,8 +75,9 @@ utils.save_command(args.output_dir)
 
 # @profile
 def main():
-
-    cam = webcamgrabber.Arducam("rtsp://192.168.1.70:8554/test")
+    # cam = webcamgrabber.Arducam("rtsp://192.168.1.70:8554/test")
+    # cam = webcamgrabber.Arducam("parallel_dining.mp4")
+    cam = webcamgrabber.Arducam("udpsrc port=5000 ! application/x-rtp, media=video, encoding-name=JPEG, payload=96 ! rtpjpegdepay ! jpegdec ! videoconvert ! appsink")
     left, right = cam.read()
     img_height, img_width= left.shape[:2]
 
@@ -158,17 +159,14 @@ def main():
 
         num_imgs += left.size(0)
 
-        print("Performing inference...")
+        # print("Performing inference...")
         with torch.no_grad():
             time_start = time.perf_counter()
-            # print(left.shape)
-            outputdisp = aanet(left, right)  # [B, H, W]
-            print(f"Size {outputdisp.shape}")
-            pred_disp = outputdisp[-1]
+            pred_disp = aanet(left, right)  # [B, C, H, W]
             inference_time += time.perf_counter() - time_start
 
-        print("Interpolating disparity...")
         if pred_disp.size(-1) < left.size(-1):
+            print("Interpolating disparity...")
             pred_disp = pred_disp.unsqueeze(1)  # [B, 1, H, W]
             pred_disp = F.interpolate(pred_disp, (left.size(-2), left.size(-1)),
                                       mode='bilinear', align_corners=True, recompute_scale_factor=True) * (left.size(-1) / pred_disp.size(-1))

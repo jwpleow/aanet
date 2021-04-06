@@ -171,7 +171,7 @@ def main():
 
         with torch.no_grad():
             time_start = time.perf_counter()
-            pred_disp = aanet(left, right)[-1]  # [B, H, W]
+            pred_disp = aanet(left, right)  # [B, H, W]
             inference_time += time.perf_counter() - time_start
 
         if pred_disp.size(-1) < left.size(-1):

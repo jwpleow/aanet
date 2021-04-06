@@ -5,6 +5,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/ximgproc.hpp>
 
 #include <iostream>
 #include <memory>
@@ -12,24 +13,35 @@
 
 
 // test model
-
-void ProcessImage(cv::Mat input, torch::Tensor output, torch::Device device)
+void printTensorProperties(const torch::Tensor &tens)
 {
-    cv::cvtColor(input, input, cv::COLOR_BGR2RGB);
-    input.convertTo(input, CV_32FC3, 1./255.0);
+    std::cout << "Tensor Properties\n"
+              << "Dimensions: " << tens.dim() << "\n"
+              << "Datatype: " << tens.dtype() << "\n"
+              << "Device: " << tens.device() << "\n"
+              << "Size: " << tens.sizes() << "\n"
+              << "Number of Elements: " << tens.numel() << "\n";
+}
+
+void ProcessImage(const cv::Mat& input, torch::Tensor& output, torch::Device& device)
+{
+    cv::Mat temp;
+    cv::cvtColor(input, temp, cv::COLOR_BGR2RGB);
+    temp.convertTo(temp, CV_32FC3, 1. / 255.0);
     // pad image to correct size
     cv::Mat padded = cv::Mat::zeros(384, 672, CV_32FC3);
-    input.copyTo(padded(cv::Rect(0, 0, input.cols, input.rows)));
+    temp.copyTo(padded(cv::Rect(0, 0, temp.cols, temp.rows)));
     cv::imshow("padded", padded);
 
     // convert to torch tensor
     output = torch::zeros({padded.rows, padded.cols, padded.channels()});
-    output = torch::from_blob(padded.data, {1, 3, padded.rows, padded.cols}, at::kFloat).clone().to(device);
+    output = torch::from_blob(padded.data, {1, 3, padded.rows, padded.cols}, at::kFloat).clone();
+    output = output.to(device);
 
     // normalize image
     // IMAGENET_MEAN = [0.485, 0.456, 0.406]
     // IMAGENET_STD = [0.229, 0.224, 0.225]
-    output[0][0] = output[0][0].sub(0.485).div(0.229); // not exactly right?
+    output[0][0] = output[0][0].sub(0.485).div(0.229);
     output[0][1] = output[0][1].sub(0.456).div(0.224);
     output[0][2] = output[0][2].sub(0.406).div(0.225);
     // std::cout << output << "\n";
@@ -67,26 +79,44 @@ int main(int argc, const char *argv[])
         std::cout << "imread failed!\n";
     }
 
-    std::cout << "size of left image: " << left.size() << "\n";
-    std::cout << "size of right image: " << right.size() << "\n";
-    cv::imshow("Left", left);
-    cv::imshow("Right", right);
+    // std::cout << "size of left image: " << left.size() << "\n";
+    // std::cout << "size of right image: " << right.size() << "\n";
+    // cv::imshow("Left", left);
+    // cv::imshow("Right", right);
 
 
     torch::Tensor leftT, rightT;
     ProcessImage(left, leftT, device);
     ProcessImage(right, rightT, device);
 
+    printTensorProperties(leftT);
     std::vector<torch::jit::IValue> input;
-    // input.push_back(leftT);
-    // input.push_back(rightT);
-    auto lef = torch::ones({1, 3, 384, 672}).to(device);
-    auto righ = torch::ones({1, 3, 384, 672}).to(device);
-    input.push_back(lef);
-    input.push_back(righ);
+    input.push_back(leftT);
+    input.push_back(rightT);
+    
+    // predict
+    auto output = model.forward(input).toTensor().cpu().squeeze();
+    printTensorProperties(output);
 
-    auto output = model.forward(input);
-    std::cout << output << "\n";
+    // convert tensor to cv::Mat. remember that torch is CxHxW while openCV is HxWxC
+    cv::Mat disparity_output = cv::Mat::zeros(384, 672, CV_32F);
+    std::memcpy(disparity_output.data, output.data_ptr(), sizeof(float) * output.numel());
+
+    // crop to correct size
+    auto crop_size = cv::Rect(0, 0, left.cols, left.rows);
+    cv::Mat disparity = disparity_output(crop_size);
+
+    // visualise
+    cv::Mat disparityVis;
+    disparityVis = disparity / 200.;
+
+
+    // check minmax vals
+    double minVal, maxVal;
+    cv::minMaxLoc(disparityVis, &minVal, &maxVal);
+    std::cout << "min max " << minVal << " " << maxVal << "\n";
+
+    cv::imshow("Disparity", disparityVis);
 
     cv::waitKey(100000);
 }

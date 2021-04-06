@@ -212,4 +212,7 @@ class AANet(nn.Module):
         disparity_pyramid += self.disparity_refinement(left_img, right_img,
                                                        disparity_pyramid[-1])
 
-        return disparity_pyramid
+        if self.training:
+            return disparity_pyramid
+        else:
+            return disparity_pyramid[-1]
