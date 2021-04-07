@@ -5,6 +5,19 @@ import open3d as o3d
 import time
 # conda install -c open3d-admin open3d
 
+def writeToPly(point_cloud, filename):
+    # point_cloud is HxWx3
+    with open(filename, 'w') as f:
+        f.write("ply\nformat ascii 1.0\n")
+        f.write(f"element vertex {point_cloud.shape[0] * point_cloud.shape[1]}\n")
+        f.write("property float x\n")
+        f.write("property float y\n")
+        f.write("property float z\n")
+        f.write("end_header\n")
+
+        for c in range(point_cloud.shape[1]):
+            for r in range(point_cloud.shape[0]):
+                f.write(f"{point_cloud[r, c, 0]} {point_cloud[r, c, 1]} {point_cloud[r, c, 2]}\n")
 
 class Visualiser:
     def __init__(self, Q):
@@ -54,7 +67,7 @@ class Visualiser:
 
     def update_pcd(self, disparity, img):
         point_cloud = cv2.reprojectImageTo3D(disparity, self.Q)  # outputs HxWx3
-
+        # writeToPly(point_cloud, "test.ply")
         # pointcloud
         # normalise img values to [0, 1]
         img = img.astype(np.float32) / 255.
