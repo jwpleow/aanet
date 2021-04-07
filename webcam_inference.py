@@ -135,7 +135,6 @@ def main():
     while True:
         print(f"Frame {framecount}")
         left_img, right_img = cam.read()
-        # print(left_img.shape)
         cv2.imshow("left", left_img)
         cv2.imshow("right", right_img)
         img = {'left': left_img, 'right': right_img}

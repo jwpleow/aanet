@@ -66,6 +66,7 @@ class Visualiser:
 
 
     def update_pcd(self, disparity, img):
+        # disparity should be (HxW)
         point_cloud = cv2.reprojectImageTo3D(disparity, self.Q)  # outputs HxWx3
         # writeToPly(point_cloud, "test.ply")
         # pointcloud
@@ -79,14 +80,3 @@ class Visualiser:
 
     def release(self):
         self.vis.destroy_window()
-
-
-# def visDisparity(disparity: np.ndarray, Q):
-#     dispNormalised = disparity / np.max(disparity)
-#     # print(f"disp - shape {disp.shape}, max {np.max(disp)}, min {np.min(disp)}")
-#     cv2.imshow("Disparity", dispNormalised)
-
-    
-    
-#     o3d.visualization.draw_geometries([pcd])
-#     time.sleep(1)
