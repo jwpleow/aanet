@@ -183,25 +183,6 @@ def main():
         disp = pred_disp[0].detach().cpu().numpy()
 
         vis.update(disp, left_img)
-
-        # for b in range(pred_disp.size(0)):
-        #     disp = pred_disp[b].detach().cpu().numpy()  # [H, W]
-        #     save_name = sample['left_name'][b]
-        #     save_name = os.path.join(args.output_dir, save_name)
-        #     utils.check_path(os.path.dirname(save_name))
-        #     if not args.count_time:
-        #         if args.save_type == 'pfm':
-        #             if args.visualize:
-        #                 skimage.io.imsave(save_name, (disp * 256.).astype(np.uint16))
-
-        #             save_name = save_name[:-3] + 'pfm'
-        #             write_pfm(save_name, disp)
-        #         elif args.save_type == 'npy':
-        #             save_name = save_name[:-3] + 'npy'
-        #             np.save(save_name, disp)
-        #         else:
-        #             skimage.io.imsave(save_name, (disp * 256.).astype(np.uint16))
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cam.release()
             vis.release()

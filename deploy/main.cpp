@@ -13,7 +13,20 @@
 #include <memory>
 #include <string>
 
-
+void convertTensorToCvMat(const torch::Tensor &tens, cv::Mat &mat)
+{
+    if (tens.dim() == 2)
+    {
+        mat = cv::Mat::zeros(tens.size(0), tens.size(1), CV_32F);
+        std::memcpy(mat.data, tens.data_ptr(), sizeof(float) * tens.numel());
+    }
+    else if (tens.dim() == 4 && tens.size(1) == 3)
+    {
+        mat = cv::Mat::zeros(tens.size(2), tens.size(3), CV_32FC3);
+        torch::Tensor temp = tens.permute({0, 2, 3, 1}).clone();
+        std::memcpy(mat.data, temp.data_ptr(), sizeof(float) * temp.numel());
+    }
+}
 // test model
 void printTensorProperties(const torch::Tensor &tens)
 {
@@ -29,9 +42,9 @@ void printTensorProperties(const torch::Tensor &tens)
 */
 void ProcessImage(const cv::Mat& input, torch::Tensor& output, torch::Device& device)
 {
-    // if using an RGB image make sure to remember to transpose/cvtColor to RGB 
+    // if using an RGB image make sure to remember to transpose/cvtColor to RGB
 
-    // convert to torch tensor
+    // convert to torch tensor. torch is CxHxW while OpenCV is HxWxC
     auto temp = torch::zeros({input.rows, input.cols, input.channels()});
     temp = torch::from_blob(input.data, {1, input.rows, input.cols, 3}, at::kByte).clone();
     temp = temp.to(at::kFloat);
@@ -59,6 +72,11 @@ void ProcessImage(const cv::Mat& input, torch::Tensor& output, torch::Device& de
         static int right_pad = img_width - ori_width;
         output = torch::nn::functional::pad(temp, torch::nn::functional::PadFuncOptions({0, right_pad, top_pad, 0}));
     }
+
+    cv::Mat mat = cv::Mat::zeros(output.size(2), output.size(3), CV_32FC3);
+    torch::Tensor tens = output.clone();
+    convertTensorToCvMat(tens, mat);
+    cv::imshow("Padded image ", mat);
 
     output = output.to(device);
 }
@@ -110,14 +128,15 @@ int main(int argc, const char *argv[])
 
     // predict
     auto output = model.forward(input).toTensor().cpu().squeeze();
+    std::cout << "Disparity output properties:\n";
     printTensorProperties(output);
 
-    // convert tensor to cv::Mat. remember that torch is CxHxW while openCV is HxWxC
-    cv::Mat disparity_output = cv::Mat::zeros(384, 672, CV_32F);
+    // convert tensor to cv::Mat
+    cv::Mat disparity_output = cv::Mat::zeros(output.size(0), output.size(1), CV_32F);
     std::memcpy(disparity_output.data, output.data_ptr(), sizeof(float) * output.numel());
 
     // crop to correct size
-    auto crop_size = cv::Rect(0, 0, left.cols, left.rows);
+    auto crop_size = cv::Rect(0, 0, left.cols, left.rows); // note this cropping is wrong, first arg should be top_pad
     cv::Mat disparity = disparity_output(crop_size);
 
     // visualise

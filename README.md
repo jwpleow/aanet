@@ -1,5 +1,23 @@
 # AANet
 
+## Changes made from the original
+* Tested on PyTorch 1.7
+* `run_webcam.sh` script to run inference on a `cv2.VideoCapture` feed
+* `convert_format.sh` script to convert to a libtorch model (Only tested on )
+* Sample C++ script to run the libtorch model in `deploy/`
+
+Note: the `nets/deform_conv/dcn_cpp_plugin` used by default in the model currently is only tested to work on Pytorch 1.7 and only has forward() defined. Change this to the DeformConv module in `nets/deform_conv` for training (build that using the `make.sh` in the folder, and change the ModulatedDeformConv in `nets/deform_conv/deform_conv.py`).
+
+### How to setup
+Build `nets/deform_conv/dcn_cpp_plugin` 
+```
+cd nets/deform_conv/dcn_cpp_plugin
+mkdir build
+cd build
+cmake .. # note be careful which version of libtorch you use (whether it's precxx11 abi or not), see readme in the folder
+make
+```
+# Original Readme
 PyTorch implementation of our paper: 
 
 **[AANet: Adaptive Aggregation Network for Efficient Stereo Matching](https://arxiv.org/abs/2004.09548)**, [CVPR 2020](http://cvpr2020.thecvf.com/)

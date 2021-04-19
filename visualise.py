@@ -50,7 +50,7 @@ class Visualiser:
         if not self.initialized_flag:
             self.init(disparity, img)
             self.initialized_flag = True
-        print("Updating Visualiser...")
+        # print("Updating Visualiser...")
         dispNormalised = disparity / np.max(disparity)
         # print(f"disp - shape {disp.shape}, max {np.max(disp)}, min {np.min(disp)}")
         cv2.imshow("Disparity", dispNormalised)

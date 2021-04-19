@@ -6,6 +6,7 @@ from https://github.com/xi11xi19/CenterNet2TorchScript, fixed
 mkdir build
 cd build
 cmake -DCMAKE_PREFIX_PATH="$(python -c 'import torch.utils; print(torch.utils.cmake_prefix_path)')" ..
+make
 ```
 (note, if you build like the above, its built with precxx11 ABI)
 ## Usage
