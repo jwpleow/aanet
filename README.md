@@ -2,11 +2,11 @@
 
 ## Changes made from the original
 * Tested on PyTorch 1.7
-* `run_webcam.sh` script to run inference on a `cv2.VideoCapture` feed
-* `convert_format.sh` script to convert to a libtorch model (Only tested on )
+* Live inference script - just substitute your own rectified feed into `webcam_inference.py`
+* `convert_format.sh` script to convert to a libtorch model (Only tested on PyTorch 1.7)
 * Sample C++ script to run the libtorch model in `deploy/`
 
-Note: the `nets/deform_conv/dcn_cpp_plugin` used by default in the model currently is only tested to work on Pytorch 1.7 and only has forward() defined. Change this to the DeformConv module in `nets/deform_conv` for training (build that using the `make.sh` in the folder, and change the ModulatedDeformConv in `nets/deform_conv/deform_conv.py`).
+Note: the `nets/deform_conv/dcn_cpp_plugin` used by default in the model currently only has forward() defined. Change this to the DeformConv module in `nets/deform_conv` for training (build that using the `make.sh` in the folder, and change the ModulatedDeformConv in `nets/deform_conv/deform_conv.py`).
 
 ### How to setup
 Build `nets/deform_conv/dcn_cpp_plugin` 
